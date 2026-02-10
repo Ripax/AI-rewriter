@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset="UTF-8" />
+    <link rel="stylesheet" href="styles.css" />
+</head>
+
+<body>
+    <div class="popup-container">
+
+        <!-- HEADER -->
+        <div class="header">
+            <img src="icons/ai.png" width="64" height="64" alt="AI Icon" />
+            <div class="title">
+                <div class="app-name">AI Rewrite Assistant</div>
+                <div class="app-subtitle">Love from @HTMLDigger</div>
+            </div>
+        </div>
+
+        <!-- STATUS BAR -->
+        <div id="apiStatus" class="api-status">
+            <button id="settingsBtn" class="icon-btn" title="Settings">⚙️</button>
+            <span id="apiStatusText" class="status-text">Ready</span>
+
+            <label class="switch small" title="Toggle theme">
+                <input type="checkbox" id="themeToggle" />
+                <span class="slider"></span>
+            </label>
+        </div>
+
+        <!-- SETTINGS PANEL -->
+        <div id="settingsPanel" class="settings-panel hidden">
+            <h3>Settings</h3>
+
+            <!-- PROVIDER -->
+            <div class="setting-group">
+                <label>AI Provider</label>
+                <div class="provider-toggle">
+                    <label class="provider-option">
+                        <input type="radio" name="aiProvider" value="local" />
+                        <span>🖥️ <small>Local</small></span>
+                    </label>
+
+                    <label class="provider-option">
+                        <input type="radio" name="aiProvider" value="openai" checked />
+                        <span>🤖 <small>ChatGPT</small></span>
+                    </label>
+                </div>
+            </div>
+
+            <!-- OPENAI SETTINGS -->
+            <div id="openaiSettings" class="setting-group">
+                <label>OpenAI API Key</label>
+
+                <div class="api-key-row">
+                    <input type="password" id="openaiApiKey" placeholder="sk-..." />
+                </div>
+                <div class="api-key-actions">
+                    <button id="saveApiKey" class="secondary">Save</button>
+                </div>
+
+                <small id="apiKeyHint" class="muted"></small>
+            </div>
+
+            <!-- OLLAMA SETTINGS -->
+            <div id="ollamaSettings" class="setting-group hidden">
+                <label>Ollama Model</label>
+                <select id="ollamaModel"></select>
+                <small class="muted">Loaded from local Ollama</small>
+            </div>
+
+            <!-- MODEL -->
+            <div id="chatgptModelSettings" class="setting-group">
+                <label>ChatGPT Model</label>
+                <select id="modelSwitcher">
+                    <option value="gpt-4o-mini">GPT-4o Mini</option>
+                    <option value="gpt-4o">GPT-4o</option>
+                </select>
+            </div>
+            <button id="closeSettings" class="secondary">Close</button>
+        </div>
+
+        <!-- TEMPLATE DROPDOWN -->
+        <div class="dropdown" id="templateDropdown">
+            <button class="dropdown-trigger" id="dropdownTrigger">
+                <span id="selectedTemplate">None</span>
+                <span class="dropdown-arrow">▾</span>
+            </button>
+            <div class="dropdown-menu" id="dropdownMenu"></div>
+        </div>
+
+        <!-- INPUT -->
+        <textarea id="inputText" placeholder="Paste text here"></textarea>
+        <button id="rewriteBtn">Rewrite</button>
+
+        <div id="spinner" class="spinner hidden"></div>
+
+        <!-- OUTPUT -->
+        <textarea id="outputText" readonly placeholder="Rewritten text"></textarea>
+        <button id="copyBtn" class="secondary hidden">Copy</button>
+
+    </div>
+
+    <script src="popup.js"></script>
+</body>
+
+</html>

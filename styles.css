@@ -1,0 +1,559 @@
+/* =========================================================
+    THEME VARIABLES
+========================================================= */
+
+:root {
+    --bg: #0f1115;
+    --card: #0f1115;
+    --text: #e6e6e6;
+    --muted: #9aa4b2;
+    --input-bg: #1c1f26;
+    --border: #2a2f3a;
+    --primary: #5eb94c;
+}
+
+body.light {
+    --bg: #f5f7fb;
+    --card: #ffffff;
+    --text: #1f2937;
+    --muted: #6b7280;
+    --input-bg: #f1f5f9;
+    --border: #d1d5db;
+    --primary: #5eb94c;
+}
+
+/* =========================================================
+    POPUP SIZE (CHROME-SAFE)
+========================================================= */
+
+.icon-btn {
+    width: 12px;
+    height: 12px;
+
+    padding: 0;
+    /* 🚫 remove padding */
+    margin: 0;
+
+    background: transparent;
+    border: none;
+    cursor: pointer;
+
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+
+    font-size: 12px;
+    /* icon size */
+    line-height: 12px;
+    /* 👈 CRITICAL */
+}
+
+.icon-btn:hover {
+    opacity: 0.8;
+}
+
+.icon-btn:hover {
+    filter: drop-shadow(0 0 4px rgba(94, 185, 76, 0.5));
+}
+
+/* =========================================================
+    POPUP SIZE (CHROME-SAFE)
+========================================================= */
+
+html,
+body {
+    margin: 0;
+    padding: 0;
+
+    width: 330px;
+    min-height: 480px;
+    max-height: auto;
+
+    background: var(--bg);
+    overflow: hidden;
+    /* 🚫 no outer scrollbar */
+}
+
+body {
+    display: flex;
+    flex-direction: column;
+    font-family: system-ui, -apple-system, BlinkMacSystemFont;
+    color: var(--text);
+}
+
+/* =========================================================
+    SMOOTH POPUP HEIGHT ANIMATION
+========================================================= */
+
+.popup-container {
+    background: var(--card);
+    color: var(--text);
+
+    padding: 14px;
+    border-radius: 14px 14px 0 0;
+
+    box-shadow:
+        0 12px 28px rgba(0, 0, 0, 0.55),
+        0 6px 12px rgba(0, 0, 0, 0.4);
+
+    overflow: hidden;
+
+    /* 🪄 magic */
+    transition: height 0.25s cubic-bezier(.4, 0, .2, 1);
+}
+
+/* =========================================================
+    ACRYLIC THIN SCROLLBAR (NO CONFLICTS)
+========================================================= */
+
+textarea::-webkit-scrollbar,
+.dropdown-menu::-webkit-scrollbar,
+.settings-panel::-webkit-scrollbar {
+    width: 6px;
+}
+
+textarea::-webkit-scrollbar-track,
+.dropdown-menu::-webkit-scrollbar-track,
+.settings-panel::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+textarea::-webkit-scrollbar-thumb,
+.dropdown-menu::-webkit-scrollbar-thumb,
+.settings-panel::-webkit-scrollbar-thumb {
+    background: rgba(255, 255, 255, 0.25);
+    border-radius: 10px;
+    backdrop-filter: blur(6px);
+}
+
+textarea::-webkit-scrollbar-thumb:hover,
+.dropdown-menu::-webkit-scrollbar-thumb:hover,
+.settings-panel::-webkit-scrollbar-thumb:hover {
+    background: rgba(255, 255, 255, 0.45);
+}
+
+/* Firefox */
+textarea,
+.dropdown-menu,
+.settings-panel {
+    scrollbar-width: thin;
+    scrollbar-color: rgba(255, 255, 255, 0.35) transparent;
+}
+
+/* =========================================================
+    INPUTS & TEXTAREAS
+========================================================= */
+
+input,
+textarea {
+    width: 100%;
+    margin-top: 6px;
+    padding: 8px;
+
+    background: var(--input-bg);
+    color: var(--text);
+
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    box-sizing: border-box;
+}
+
+/* Auto-grow output */
+textarea {
+    resize: none;
+    overflow-y: hidden;
+    min-height: 80px;
+
+    transition: height 0.18s ease, opacity 0.15s ease;
+    transform-origin: top;
+}
+
+textarea.scrollable {
+    overflow-y: auto;
+}
+
+/* =========================================================
+    HEADER
+========================================================= */
+
+.header {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 12px;
+}
+
+.header img {
+    border-radius: 12px;
+}
+
+.title {
+    display: flex;
+    flex-direction: column;
+}
+
+.app-name {
+    font-size: 16px;
+    font-weight: 600;
+}
+
+.app-subtitle {
+    font-size: 11px;
+    color: var(--muted);
+}
+
+/* =========================================================
+    API STATUS + THEME TOGGLE
+========================================================= */
+
+.api-status {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+
+    margin: 6px;
+    padding: 5px;
+
+    background: rgba(255, 255, 255, 0.03);
+    border-radius: 8px;
+}
+
+.status-text {
+    font-size: 12px;
+}
+
+/* =========================================================
+    TOGGLE SWITCH
+========================================================= */
+
+.switch {
+    position: relative;
+    width: 36px;
+    height: 18px;
+}
+
+.switch input {
+    opacity: 0;
+    width: 0;
+    height: 0;
+}
+
+.slider {
+    position: absolute;
+    inset: 0;
+    cursor: pointer;
+    background: #2e3440;
+    border-radius: 999px;
+    transition: background-color 0.25s ease;
+}
+
+.slider::before {
+    content: "";
+    position: absolute;
+    width: 12px;
+    height: 12px;
+    left: 3px;
+    top: 50%;
+    transform: translateY(-50%);
+    background: #ffffff;
+    border-radius: 50%;
+    transition: transform 0.25s ease;
+}
+
+input:checked+.slider {
+    background: var(--primary);
+}
+
+input:checked+.slider::before {
+    transform: translate(18px, -50%);
+}
+
+/* =========================
+    AI PROVIDER TOGGLE (RESTORED + POLISHED)
+========================= */
+
+.provider-toggle {
+    display: flex;
+    gap: 8px;
+    margin-top: 6px;
+}
+
+.provider-option {
+    flex: 1;
+    position: relative;
+
+    padding: 10px 8px;
+
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+
+    cursor: pointer;
+    text-align: center;
+
+    transition:
+        background 0.18s ease,
+        border-color 0.18s ease,
+        transform 0.08s ease;
+}
+
+.provider-option input {
+    display: none;
+}
+
+.provider-option span {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+
+    font-size: 12px;
+    color: var(--text);
+    opacity: 0.75;
+
+    transition: opacity 0.18s ease;
+}
+
+/* hover */
+.provider-option:hover {
+    background: rgba(94, 185, 76, 0.12);
+    border-color: rgba(94, 185, 76, 0.4);
+}
+
+/* active */
+.provider-option input:checked+span {
+    opacity: 1;
+    font-weight: 600;
+}
+
+.provider-option input:checked {
+    display: none;
+}
+
+.provider-option input:checked+span::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+
+    border-radius: 10px;
+    border: 1px solid var(--primary);
+
+    pointer-events: none;
+}
+
+/* press */
+.provider-option:active {
+    transform: translateY(1px);
+}
+
+.provider-option input:checked+span {
+    text-shadow: 0 0 6px rgba(94, 185, 76, 0.35);
+}
+
+/* =========================================================
+    CUSTOM DROPDOWN
+========================================================= */
+
+.dropdown {
+    position: relative;
+    margin-top: 6px;
+}
+
+.dropdown-trigger {
+    height: 36px;
+    padding: 0 10px;
+
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+
+    background: var(--input-bg);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+
+    cursor: pointer;
+}
+
+.dropdown-menu {
+    position: absolute;
+    top: calc(100% + 6px);
+    left: 0;
+    right: 0;
+
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+
+    padding: 6px 0;
+
+    opacity: 0;
+    transform: translateY(-6px) scale(0.98);
+    pointer-events: none;
+
+    transition: opacity 0.18s ease, transform 0.18s ease;
+}
+
+.dropdown.open .dropdown-menu {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+    pointer-events: auto;
+}
+
+/* =========================
+   SMOOTH MODEL SELECTOR
+========================= */
+
+.settings-panel select,
+#ollamaModel {
+    width: 100%;
+    height: 34px;
+    padding: 0 34px 0 10px;
+
+    background:
+        linear-gradient(to bottom,
+            rgba(255, 255, 255, 0.06),
+            rgba(255, 255, 255, 0.02)),
+        var(--input-bg);
+
+    color: var(--text);
+
+    border: 1px solid var(--border);
+    border-radius: 10px;
+
+    font-size: 12px;
+    font-weight: 500;
+
+    appearance: none;
+    -webkit-appearance: none;
+    -moz-appearance: none;
+
+    cursor: pointer;
+
+    transition:
+        border-color 0.18s ease,
+        box-shadow 0.18s ease,
+        background 0.18s ease,
+        transform 0.08s ease;
+}
+
+/* hover */
+.settings-panel select:hover,
+#ollamaModel:hover {
+    border-color: rgba(94, 185, 76, 0.6);
+}
+
+/* focus */
+.settings-panel select:focus,
+#ollamaModel:focus {
+    outline: none;
+
+    border-color: var(--primary);
+    box-shadow:
+        0 0 0 1px rgba(94, 185, 76, 0.6),
+        0 6px 16px rgba(0, 0, 0, 0.35);
+}
+
+/* press */
+.settings-panel select:active,
+#ollamaModel:active {
+    transform: translateY(1px);
+}
+
+/* =========================
+    CUSTOM DROPDOWN ARROW
+========================= */
+
+.settings-panel select,
+#ollamaModel {
+    background-image:
+        linear-gradient(45deg,
+            transparent 50%,
+            rgba(255, 255, 255, 0.6) 50%),
+        linear-gradient(135deg,
+            rgba(255, 255, 255, 0.6) 50%,
+            transparent 50%),
+        linear-gradient(to right,
+            transparent,
+            transparent);
+    background-position:
+        calc(100% - 18px) 14px,
+        calc(100% - 13px) 14px,
+        100% 0;
+    background-size:
+        5px 5px,
+        5px 5px,
+        2.5em 100%;
+    background-repeat: no-repeat;
+}
+
+.settings-panel select:focus,
+#ollamaModel:focus {
+    background:
+        linear-gradient(to bottom,
+            rgba(94, 185, 76, 0.18),
+            rgba(94, 185, 76, 0.06)),
+        var(--input-bg);
+}
+
+/* =========================================================
+    SETTINGS PANEL (ANIMATED)
+========================================================= */
+
+.settings-panel {
+    margin: 12px;
+    padding: 12px;
+
+    background: rgba(255, 255, 255, 0.04);
+    border: 1px solid rgba(255, 255, 255, 0.06);
+    border-radius: 10px;
+
+    transform-origin: top;
+    transform: translateY(-6px) scaleY(0.98);
+    opacity: 0;
+    pointer-events: none;
+
+    transition:
+        transform 0.18s ease,
+        opacity 0.18s ease;
+}
+
+.settings-panel:not(.hidden) {
+    transform: translateY(0) scaleY(1);
+    opacity: 1;
+    pointer-events: auto;
+}
+
+/* =========================================================
+    BUTTONS
+========================================================= */
+
+button {
+    width: 100%;
+    margin-top: 10px;
+    padding: 8px;
+
+    background: var(--primary);
+    color: #fff;
+
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+}
+
+button.secondary {
+    background: #2e3440;
+}
+
+/* =========================================================
+    UTIL
+========================================================= */
+
+.hidden {
+    display: none !important;
+}
+
+@keyframes spin {
+    to {
+        transform: rotate(360deg);
+    }
+}
