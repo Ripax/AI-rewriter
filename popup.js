@@ -31,14 +31,17 @@ const appModeToggle = document.getElementById("appModeToggle");
 
 // --- Settings: Providers ---
 const providerRadios = document.querySelectorAll('input[name="aiProvider"]');
-const openaiSettings = document.getElementById("openaiSettings");
+const openrouterSettings = document.getElementById("openrouterSettings");
 const ollamaSettings = document.getElementById("ollamaSettings");
 
-// --- Settings: OpenAI ---
-const openaiApiKeyInput = document.getElementById("openaiApiKey");
+// --- Settings: OpenRouter ---
+const openrouterApiKeyInput = document.getElementById("openrouterApiKey");
 const saveApiKeyBtn = document.getElementById("saveApiKey");
-const chatgptModelSettings = document.getElementById("chatgptModelSettings");
-const modelSwitcher = document.getElementById("modelSwitcher");
+const openrouterModelSettings = document.getElementById("openrouterModelSettings");
+const openrouterModelSelect = document.getElementById("openrouterModel");
+
+// --- Settings: Visuals ---
+const spinnerStyleSelector = document.getElementById("spinnerStyleSelector");
 
 // --- Settings: Ollama ---
 const ollamaModelSelect = document.getElementById("ollamaModel");
@@ -49,13 +52,17 @@ const tempValue = document.getElementById("tempValue");
    2. STATE VARIABLES
 ========================================================= */
 
-let activeProvider = "openai";
+let activeProvider = "openrouter"; 
 let currentMode = "rewrite";
 let currentTemperature = 0.7;
+let currentSpinnerStyle = "quantum"; // Default
 let ollamaWatcher = null;
 
+// --- API ENDPOINTS ---
 const OLLAMA_ENDPOINT = "http://localhost:11434/api/generate";
 const OLLAMA_TAGS = "http://localhost:11434/api/tags";
+const OPENROUTER_ENDPOINT = "https://openrouter.ai/api/v1/chat/completions";
+const OPENROUTER_MODELS_ENDPOINT = "https://openrouter.ai/api/v1/models";
 
 /* =========================================================
    3. HELPER FUNCTIONS
@@ -83,7 +90,18 @@ function animatePopupHeight() {
 function applyTheme(theme) {
     const isDark = theme === "dark";
     document.body.classList.toggle("light", !isDark);
-    themeToggle.checked = isDark;
+    if(themeToggle) themeToggle.checked = isDark;
+}
+
+// ✅ NEW: Apply Spinner Style (Updated to include burst and liquid)
+function applySpinnerStyle(style) {
+    if (!spinner) return;
+    // Remove all possible spinner classes but keep 'spinner' and 'hidden'
+    spinner.classList.remove("quantum", "wave", "ring", "burst", "liquid");
+    
+    // Add the selected style
+    spinner.classList.add(style);
+    currentSpinnerStyle = style;
 }
 
 /* =========================================================
@@ -136,18 +154,36 @@ tabHistory.onclick = () => {
     renderHistory();
 };
 
+// --- Spinner Selector Listener ---
+if (spinnerStyleSelector) {
+    spinnerStyleSelector.addEventListener("change", () => {
+        const style = spinnerStyleSelector.value;
+        applySpinnerStyle(style);
+        chrome.storage.local.set({ SPINNER_STYLE: style });
+        
+        // Brief preview
+        spinner.classList.remove("hidden");
+        setTimeout(() => spinner.classList.add("hidden"), 1000);
+    });
+}
+
 saveApiKeyBtn.onclick = () => {
-    const key = openaiApiKeyInput.value.trim();
+    const key = openrouterApiKeyInput.value.trim();
     if (key) {
-        chrome.storage.local.set({ OPENAI_API_KEY: key }, () => {
+        chrome.storage.local.set({ OPENROUTER_API_KEY: key }, () => {
             const originalText = saveApiKeyBtn.textContent;
             saveApiKeyBtn.textContent = "Saved!";
-            if (activeProvider === 'openai') checkOpenAIConfig();
+            
+            if (activeProvider === 'openrouter') {
+                updateStatus('loading', 'Fetching Models...');
+                fetchOpenRouterModels(key);
+            }
+            
             setTimeout(() => saveApiKeyBtn.textContent = originalText, 1500);
         });
     } else {
-        chrome.storage.local.remove("OPENAI_API_KEY");
-        if (activeProvider === 'openai') updateStatus('error', 'Missing API Key');
+        chrome.storage.local.remove("OPENROUTER_API_KEY");
+        if (activeProvider === 'openrouter') updateStatus('error', 'Missing API Key');
     }
 };
 
@@ -233,12 +269,12 @@ function updateModeUI() {
 }
 
 /* =========================================================
-   8. PROVIDER LOGIC
+   8. PROVIDER LOGIC & OPENROUTER
 ========================================================= */
 
 function updateProviderUI() {
-    openaiSettings.classList.toggle("hidden", activeProvider !== "openai");
-    chatgptModelSettings.classList.toggle("hidden", activeProvider !== "openai");
+    openrouterSettings.classList.toggle("hidden", activeProvider !== "openrouter");
+    openrouterModelSettings.classList.toggle("hidden", activeProvider !== "openrouter");
     ollamaSettings.classList.toggle("hidden", activeProvider !== "local");
 
     if (activeProvider === "local") {
@@ -251,21 +287,64 @@ function updateProviderUI() {
             clearInterval(ollamaWatcher);
             ollamaWatcher = null;
         }
-        updateStatus('loading', 'Verifying Key...');
-        checkOpenAIConfig();
+        checkOpenRouterConfig();
     }
     animatePopupHeight();
 }
 
-function checkOpenAIConfig() {
-    chrome.storage.local.get(["OPENAI_API_KEY", "SELECTED_MODEL"], (res) => {
-        if (!res.OPENAI_API_KEY) {
+function checkOpenRouterConfig() {
+    chrome.storage.local.get(["OPENROUTER_API_KEY", "OPENROUTER_MODEL"], (res) => {
+        if (!res.OPENROUTER_API_KEY) {
             updateStatus('error', 'Missing API Key');
+            openrouterModelSelect.innerHTML = '<option disabled selected>Enter API Key first</option>';
         } else {
-            const model = modelSwitcher ? modelSwitcher.value : "gpt-4o-mini";
-            updateStatus('ready', model);
+            if (openrouterModelSelect.options.length <= 1) {
+                fetchOpenRouterModels(res.OPENROUTER_API_KEY, res.OPENROUTER_MODEL);
+            } else {
+                updateStatus('ready', openrouterModelSelect.value);
+            }
         }
     });
+}
+
+async function fetchOpenRouterModels(apiKey, savedModel = null) {
+    try {
+        const res = await fetch(OPENROUTER_MODELS_ENDPOINT, {
+            headers: { "Authorization": `Bearer ${apiKey}` }
+        });
+        
+        if (!res.ok) throw new Error("Failed to load models");
+        
+        const data = await res.json();
+        const models = data.data.sort((a, b) => a.name.localeCompare(b.name));
+        
+        openrouterModelSelect.innerHTML = "";
+        let isSelected = false;
+
+        models.forEach(model => {
+            const option = document.createElement("option");
+            option.value = model.id;
+            option.textContent = model.name || model.id; 
+            
+            if (savedModel && model.id === savedModel) {
+                option.selected = true;
+                isSelected = true;
+            }
+            openrouterModelSelect.appendChild(option);
+        });
+
+        if (!isSelected && models.length > 0) {
+            openrouterModelSelect.selectedIndex = 0;
+            chrome.storage.local.set({ OPENROUTER_MODEL: models[0].id });
+        }
+
+        updateStatus('ready', openrouterModelSelect.value);
+
+    } catch (error) {
+        console.error(error);
+        openrouterModelSelect.innerHTML = '<option disabled>Error loading models</option>';
+        updateStatus('error', 'Model Fetch Failed');
+    }
 }
 
 providerRadios.forEach(radio => {
@@ -276,11 +355,11 @@ providerRadios.forEach(radio => {
     };
 });
 
-if (modelSwitcher) {
-    modelSwitcher.addEventListener('change', () => {
-        const selected = modelSwitcher.value;
-        chrome.storage.local.set({ SELECTED_MODEL: selected });
-        if (activeProvider === "openai") checkOpenAIConfig();
+if (openrouterModelSelect) {
+    openrouterModelSelect.addEventListener('change', () => {
+        const selected = openrouterModelSelect.value;
+        chrome.storage.local.set({ OPENROUTER_MODEL: selected });
+        updateStatus('ready', selected);
     });
 }
 
@@ -344,36 +423,41 @@ actionBtn.onclick = async () => {
     if (!userText) {
         updateStatus('error', "Enter text first");
         setTimeout(() => {
-            if (activeProvider === 'openai') checkOpenAIConfig();
+            if (activeProvider === 'openrouter') checkOpenRouterConfig();
             else updateStatus('ready', ollamaModelSelect.value);
         }, 2000);
         return;
     }
 
+    // Show Spinner
     spinner.classList.remove("hidden");
+    
     actionBtn.disabled = true;
     outputText.value = "";
     copyBtn.classList.add("hidden");
     
     updateStatus('loading', currentMode === 'rewrite' ? "Rewriting..." : "Thinking...");
 
-    let prompt;
+    let promptSystem = "";
+    let promptUser = userText;
+
     if (currentMode === 'rewrite') {
-        prompt = `Rewrite this professionally, improving grammar and flow:\n\n${userText}`;
+        promptSystem = "You are a professional editor. Rewrite the following text to improve grammar, flow, and clarity while maintaining the original meaning.";
     } else {
-        prompt = userText;
+        promptSystem = "You are a helpful AI assistant. Solve the user's problem or answer their question concisely.";
     }
 
     try {
         let resultText = "";
 
         if (activeProvider === "local") {
+            const promptFull = `${promptSystem}\n\nUser Text:\n${userText}`;
             const res = await fetch(OLLAMA_ENDPOINT, {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({
                     model: ollamaModelSelect.value,
-                    prompt: prompt,
+                    prompt: promptFull,
                     stream: false,
                     options: { temperature: currentTemperature }
                 })
@@ -384,13 +468,35 @@ actionBtn.onclick = async () => {
             resultText = data.response || "No response";
 
         } else {
-            const response = await chrome.runtime.sendMessage({
-                action: "rewrite",
-                prompt: prompt,
-                model: modelSwitcher.value
+            const { OPENROUTER_API_KEY, OPENROUTER_MODEL } = await chrome.storage.local.get(["OPENROUTER_API_KEY", "OPENROUTER_MODEL"]);
+            
+            if (!OPENROUTER_API_KEY) throw new Error("API Key missing");
+
+            const res = await fetch(OPENROUTER_ENDPOINT, {
+                method: "POST",
+                headers: {
+                    "Authorization": `Bearer ${OPENROUTER_API_KEY}`,
+                    "Content-Type": "application/json",
+                    "HTTP-Referer": "https://github.com/HTMLDigger", 
+                    "X-Title": "NexText Extension"
+                },
+                body: JSON.stringify({
+                    model: OPENROUTER_MODEL || "openai/gpt-3.5-turbo",
+                    messages: [
+                        { role: "system", content: promptSystem },
+                        { role: "user", content: promptUser }
+                    ],
+                    temperature: currentTemperature
+                })
             });
-            if (chrome.runtime.lastError) throw new Error(chrome.runtime.lastError.message);
-            resultText = response?.result || "No response";
+
+            if (!res.ok) {
+                const errData = await res.json();
+                throw new Error(errData.error?.message || "OpenRouter Error");
+            }
+
+            const data = await res.json();
+            resultText = data.choices?.[0]?.message?.content || "No response";
         }
         
         outputText.value = resultText;
@@ -399,15 +505,18 @@ actionBtn.onclick = async () => {
             saveToHistory(userText, resultText, currentMode);
         }
         
-        if (activeProvider === 'openai') checkOpenAIConfig();
+        if (activeProvider === 'openrouter') updateStatus('ready', openrouterModelSelect.value);
         else updateStatus('ready', ollamaModelSelect.value);
 
     } catch (err) {
+        console.error(err);
         outputText.value = "Error: " + err.message;
         updateStatus('error', "Failed");
     }
 
+    // Hide Spinner
     spinner.classList.add("hidden");
+    
     actionBtn.disabled = false;
     copyBtn.classList.remove("hidden");
     animatePopupHeight();
@@ -437,19 +546,23 @@ if (temperatureSlider && tempValue) {
 ========================================================= */
 
 chrome.storage.local.get(
-    ["AI_PROVIDER", "OPENAI_API_KEY", "SELECTED_MODEL", "OLLAMA_TEMP", "THEME"],
+    ["AI_PROVIDER", "OPENROUTER_API_KEY", "OPENROUTER_MODEL", "OLLAMA_TEMP", "THEME", "SPINNER_STYLE"],
     (res) => {
         const savedTheme = res.THEME;
         if (savedTheme) applyTheme(savedTheme);
 
-        openaiApiKeyInput.value = res.OPENAI_API_KEY || "";
-        if (modelSwitcher) modelSwitcher.value = res.SELECTED_MODEL || "gpt-4o-mini";
-
+        openrouterApiKeyInput.value = res.OPENROUTER_API_KEY || "";
+        
         currentTemperature = res.OLLAMA_TEMP ?? 0.7;
         if (temperatureSlider) temperatureSlider.value = currentTemperature;
         if (tempValue) tempValue.textContent = `Temperature: ${currentTemperature}`;
 
-        activeProvider = res.AI_PROVIDER || "openai";
+        // Initialize Spinner Style
+        const savedSpinner = res.SPINNER_STYLE || "quantum";
+        applySpinnerStyle(savedSpinner);
+        if (spinnerStyleSelector) spinnerStyleSelector.value = savedSpinner;
+
+        activeProvider = res.AI_PROVIDER || "openrouter";
         providerRadios.forEach(r => (r.checked = r.value === activeProvider));
 
         updateProviderUI(); 
